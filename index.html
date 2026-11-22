@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractional COO — Интерактивный оффер</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #09090b;
+            color: #fafafa;
+            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 50%);
+        }
+        .bento-card {
+            background: rgba(24, 24, 27, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            transition: all 0.2s ease;
+        }
+        .bento-card:hover {
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: #27272a;
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-zinc-950">
+
+    <!-- КОМПАКТНАЯ ШАПКА -->
+    <header class="border-b border-white/5 sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md">
+        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-sky-400 text-zinc-950 flex items-center justify-center font-bold text-sm">
+                    <i class="ph-bold ph-lightning"></i>
+                </div>
+                <span class="font-bold text-sm tracking-tight">FRACTIONAL.COO</span>
+                <span class="text-[11px] font-mono text-zinc-500 hidden sm:inline">// Операционный директор на аутсорсе</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openPersonalize()" class="text-xs font-mono px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-white/10 transition-all">
+                    <i class="ph ph-user-focus text-sky-400"></i> <span class="hidden sm:inline">Для кого</span>
+                </button>
+                <a href="#book" class="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 transition-all">
+                    Обсудить разбор →
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- МОДАЛКА ПЕРСОНАЛИЗАЦИИ -->
+    <div id="modal-person" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bento-card max-w-sm w-full rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="font-bold text-sm">Персонализация оффера</span>
+                <button onclick="openPersonalize()" class="text-zinc-400 hover:text-white"><i class="ph ph-x"></i></button>
+            </div>
+            <input type="text" id="in-client" placeholder="Имя (напр. Максим)" class="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-sm focus:border-sky-400 focus:outline-none">
+            <input type="text" id="in-company" placeholder="Компания (напр. CloudTech)" class="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-sm focus:border-sky-400 focus:outline-none">
+            <button onclick="savePersonalize()" class="w-full py-2 rounded-xl bg-sky-400 text-zinc-950 font-bold text-xs">Применить</button>
+        </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 sm:py-12 space-y-6 w-full">
+
+        <!-- 1. HERO + МГНОВЕННЫЙ ПЕРЕКЛЮЧАТЕЛЬ ФОКУСА -->
+        <section class="bento-card rounded-3xl p-6 sm:p-10 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div class="space-y-3 max-w-2xl">
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-mono">
+                        <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
+                        <span>Оффер для: <strong id="out-client">Собственника бизнеса</strong> (<span id="out-company">Ваш проект</span>)</span>
+                    </div>
+                    <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                        Вывожу основателя из рутины за 60 дней и ставлю системное управление
+                    </h1>
+                    <p class="text-sm text-zinc-400 leading-relaxed">
+                        Беру операционный контур, команду и метрики на себя в формате <span class="text-zinc-200 font-medium">15 часов в неделю</span>. В 2.5 раза дешевле штатного COO, с прозрачными дашбордами с первой недели.
+                    </p>
+                </div>
+
+                <!-- Ключевые цифры в 1 взгляд -->
+                <div class="grid grid-cols-2 gap-3 shrink-0">
+                    <div class="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 text-center">
+                        <div class="text-xl sm:text-2xl font-mono font-bold text-emerald-400">-80%</div>
+                        <div class="text-[11px] text-zinc-400 mt-0.5">рутины на CEO</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 text-center">
+                        <div class="text-xl sm:text-2xl font-mono font-bold text-sky-400">4.85+</div>
+                        <div class="text-[11px] text-zinc-400 mt-0.5">индекс качества CSI</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 text-center">
+                        <div class="text-xl sm:text-2xl font-mono font-bold text-white">14 дн</div>
+                        <div class="text-[11px] text-zinc-400 mt-0.5">до первых цифр</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 text-center">
+                        <div class="text-xl sm:text-2xl font-mono font-bold text-amber-400">100%</div>
+                        <div class="text-[11px] text-zinc-400 mt-0.5">гарантия возврата</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Переключатель главных болей -->
+            <div class="pt-6 border-t border-white/5">
+                <div class="text-[11px] font-mono uppercase text-zinc-500 mb-3">Выберите вашу главную точку напряжения:</div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+                    <button onclick="setFocus('fire')" id="tab-fire" class="p-3 rounded-xl text-left text-xs font-semibold bg-sky-500/15 border border-sky-400/50 text-white transition-all">
+                        🔥 Все замыкается на мне 24/7
+                    </button>
+                    <button onclick="setFocus('fot')" id="tab-fot" class="p-3 rounded-xl text-left text-xs font-semibold bg-zinc-900/80 border border-white/5 text-zinc-400 hover:text-white transition-all">
+                        💸 Штат растет, а прибыль стоит
+                    </button>
+                    <button onclick="setFocus('blind')" id="tab-blind" class="p-3 rounded-xl text-left text-xs font-semibold bg-zinc-900/80 border border-white/5 text-zinc-400 hover:text-white transition-all">
+                        📉 Сбои SLA и слепая аналитика
+                    </button>
+                </div>
+                <div id="focus-panel" class="p-4 rounded-2xl bg-zinc-950/90 border border-white/10 text-xs sm:text-sm text-zinc-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <!-- Динамический текст -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. BENTO-СЕТКА: КАЛЬКУЛЯТОР ПОТЕРЬ + СРАВНЕНИЕ БЫЛО/СТАЛО -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Калькулятор цены хаоса + Окупаемость COO и CFO (6 колонок) -->
+            <div class="lg:col-span-6 bento-card rounded-3xl p-6 flex flex-col justify-between space-y-5">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono uppercase text-rose-400 font-bold">Цена операционного хаоса</span>
+                        <span class="text-[11px] font-mono text-zinc-500">Live-расчет</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="text-zinc-400">Месячная выручка компании</span>
+                                <span class="font-mono font-bold text-white"><span id="lbl-rev">8.0</span> млн ₽</span>
+                            </div>
+                            <input type="range" id="rng-rev" min="2" max="50" step="1" value="8" oninput="recalc()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="text-zinc-400">Текущая чистая рентабельность</span>
+                                <span class="font-mono font-bold text-white"><span id="lbl-margin">12</span>%</span>
+                            </div>
+                            <input type="range" id="rng-margin" min="3" max="40" step="1" value="12" oninput="recalc()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="text-zinc-400">Сотрудников в операционке</span>
+                                <span class="font-mono font-bold text-white"><span id="lbl-staff">30</span> чел.</span>
+                            </div>
+                            <input type="range" id="rng-staff" min="10" max="120" step="5" value="30" oninput="recalc()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="text-zinc-400">Ваше время на рутину в неделю</span>
+                                <span class="font-mono font-bold text-white"><span id="lbl-hours">25</span> ч/нед</span>
+                            </div>
+                            <input type="range" id="rng-hours" min="5" max="50" step="1" value="25" oninput="recalc()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ОТДЕЛЬНЫЙ РАСЧЕТ НОВОЙ ЧИСТОЙ ПРИБЫЛИ -->
+                <div class="p-4 rounded-2xl bg-zinc-950 border border-emerald-500/25 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-mono uppercase text-emerald-400 font-bold">Прогноз новой чистой прибыли</span>
+                        <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono text-[11px] font-bold" id="out-profit-growth">+109% к прибыли</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-white/5">
+                            <div class="text-[10px] text-zinc-400">Чистая прибыль сейчас</div>
+                            <div class="text-sm sm:text-base font-mono font-bold text-zinc-300 mt-0.5" id="out-old-profit">960 000 ₽</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                            <div class="text-[10px] text-emerald-300">Новая чистая прибыль</div>
+                            <div class="text-sm sm:text-base font-mono font-extrabold text-emerald-400 mt-0.5" id="out-new-profit">2 010 000 ₽</div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px]">
+                        <span class="text-zinc-400">Резерв роста (ФОТ + маржа + время):</span>
+                        <span class="font-mono font-bold text-sky-400" id="out-loss">+1 050 000 ₽/мес</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Трансформация за 3 спринта (6 колонок) -->
+            <div class="lg:col-span-6 bento-card rounded-3xl p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono uppercase text-emerald-400 font-bold">План трансформации: 90 дней</span>
+                        <div class="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-white/5">
+                            <button onclick="setSprint(1)" id="sp-1" class="px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-sky-400 text-zinc-950">1 мес</button>
+                            <button onclick="setSprint(2)" id="sp-2" class="px-2.5 py-1 rounded text-[11px] font-mono font-bold text-zinc-400 hover:text-white">2 мес</button>
+                            <button onclick="setSprint(3)" id="sp-3" class="px-2.5 py-1 rounded text-[11px] font-mono font-bold text-zinc-400 hover:text-white">3 мес</button>
+                        </div>
+                    </div>
+
+                    <div id="sprint-content" class="space-y-3">
+                        <!-- Динамический контент спринтов -->
+                    </div>
+                </div>
+
+                <!-- Мини-кейс доказательство -->
+                <div class="mt-6 pt-4 border-t border-white/5 grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2.5 rounded-xl bg-zinc-900/70">
+                        <div class="font-mono font-bold text-sm text-white">65 чел.</div>
+                        <div class="text-[10px] text-zinc-400">команда в управлении</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-zinc-900/70">
+                        <div class="font-mono font-bold text-sm text-emerald-400">-22% ФОТ</div>
+                        <div class="text-[10px] text-zinc-400">без потери объема</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-zinc-900/70">
+                        <div class="font-mono font-bold text-sm text-sky-400">4.85 / 5.0</div>
+                        <div class="text-[10px] text-zinc-400">удержание SLA и CSI</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2.5 ТАРИФЫ И ЖИВОЙ РАСЧЕТ ОКУПАЕМОСТИ -->
+        <section class="bento-card rounded-3xl p-6 sm:p-8 space-y-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/5 pb-5">
+                <div>
+                    <span class="text-xs font-mono uppercase text-sky-400 font-bold">Тарифы и окупаемость</span>
+                    <h2 class="text-xl sm:text-2xl font-bold mt-1">Сравните форматы работы и их окупаемость в цифрах</h2>
+                </div>
+                <!-- Ползунок регулировки ставки COO -->
+                <div class="w-full md:w-72 p-3.5 rounded-2xl bg-zinc-950 border border-white/10">
+                    <div class="flex justify-between text-xs mb-1.5">
+                        <span class="text-zinc-400">Базовая ставка COO:</span>
+                        <span class="font-mono font-bold text-sky-400" id="lbl-coo-rate">150 000 ₽/мес</span>
+                    </div>
+                    <input type="range" id="rng-coo-rate" min="90000" max="300000" step="10000" value="150000" oninput="recalc()">
+                </div>
+            </div>
+
+            <!-- 3 плашки тарифов -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Тариф 1 -->
+                <div onclick="selectTariff(1)" id="tariff-card-1" class="cursor-pointer p-5 rounded-2xl bg-zinc-950/90 border border-white/10 hover:border-sky-400/50 transition-all flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Старт • 10 ч/нед</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400" id="t1-roi">ROI 4.1x</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Операционный контроль</h3>
+                            <div class="text-2xl font-mono font-extrabold text-white mt-1" id="t1-price">150 000 ₽<span class="text-xs font-normal text-zinc-500">/мес</span></div>
+                        </div>
+                        <ul class="space-y-1.5 text-xs text-zinc-400 pt-1">
+                            <li>• Ежедневный дашборд РНП и SLA</li>
+                            <li>• Перехват планерок и контроль задач</li>
+                            <li>• Высвобождение до 15 ч/нед CEO</li>
+                        </ul>
+                    </div>
+                    <div class="p-3 rounded-xl bg-zinc-900 border border-white/5 space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400">Чистый плюс к прибыли:</span>
+                            <span class="font-mono font-bold text-emerald-400" id="t1-net">+470 000 ₽</span>
+                        </div>
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400">Срок окупаемости:</span>
+                            <span class="font-mono text-white" id="t1-payback">~7 дней</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Тариф 2 (Рекомендуемый) -->
+                <div onclick="selectTariff(2)" id="tariff-card-2" class="cursor-pointer p-5 rounded-2xl bg-sky-500/10 border-2 border-sky-400 transition-all flex flex-col justify-between space-y-5 relative">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-sky-400 text-zinc-950 font-bold">Оптимум • 15 ч/нед</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400" id="t2-roi">ROI 4.4x</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Тандем COO + CFO</h3>
+                            <div class="text-2xl font-mono font-extrabold text-white mt-1" id="t2-price">240 000 ₽<span class="text-xs font-normal text-zinc-400">/мес</span></div>
+                        </div>
+                        <ul class="space-y-1.5 text-xs text-zinc-300 pt-1">
+                            <li>• Всё из тарифа «Операционный контроль»</li>
+                            <li>• Управленческий учет: ДДС, ОПиУ, Баланс</li>
+                            <li>• Оптимизация ФОТ и защита маржи</li>
+                        </ul>
+                    </div>
+                    <div class="p-3 rounded-xl bg-zinc-950/90 border border-sky-400/30 space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400">Чистый плюс к прибыли:</span>
+                            <span class="font-mono font-bold text-emerald-400" id="t2-net">+810 000 ₽</span>
+                        </div>
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400">Срок окупаемости:</span>
+                            <span class="font-mono text-white" id="t2-payback">~7 дней</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Тариф 3 -->
+                <div onclick="selectTariff(3)" id="tariff-card-3" class="cursor-pointer p-5 rounded-2xl bg-zinc-950/90 border border-white/10 hover:border-sky-400/50 transition-all flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">Глубокий • 25 ч/нед</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400" id="t3-roi">ROI 4.2x</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Масштаб под ключ</h3>
+                            <div class="text-2xl font-mono font-extrabold text-white mt-1" id="t3-price">320 000 ₽<span class="text-xs font-normal text-zinc-500">/мес</span></div>
+                        </div>
+                        <ul class="space-y-1.5 text-xs text-zinc-400 pt-1">
+                            <li>• Полная пересборка оргструктуры и KPI</li>
+                            <li>• Найм, адаптация и обучение тимлидов</li>
+                            <li>• Автоматизация отчетов и финмодели</li>
+                        </ul>
+                    </div>
+                    <div class="p-3 rounded-xl bg-zinc-900 border border-white/5 space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400">Чистый плюс к прибыли:</span>
+                            <span class="font-mono font-bold text-emerald-400" id="t3-net">+1 020 000 ₽</span>
+                        </div>
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-zinc-400">Срок окупаемости:</span>
+                            <span class="font-mono text-white" id="t3-payback">~7 дней</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 3. БКЛЮЧЕВОЙ CTA: БРОНИРОВАНИЕ ВЫБРАННОГО ТАРИФА -->
+        <section id="book" class="bento-card rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto">
+            <div class="space-y-5 text-center">
+                <div>
+                    <span class="text-xs font-mono uppercase text-sky-400 font-bold">Финальный шаг</span>
+                    <h2 class="text-xl sm:text-2xl font-bold mt-1">Забронируйте выбранный формат работы</h2>
+                    <p class="text-xs text-zinc-400 mt-1">Вы выбрали тариф: <strong class="text-white" id="selected-tariff-name">Тандем COO + CFO</strong> (<span id="selected-tariff-price" class="font-mono text-sky-400">240 000 ₽/мес</span>)</p>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-zinc-950 border border-white/10 space-y-3 max-w-md mx-auto">
+                    <div class="space-y-2 text-left">
+                        <label class="text-[11px] text-zinc-400 block">Ваш Telegram (@username) или телефон:</label>
+                        <input type="text" id="lead-contact" placeholder="@username или +7 (999) 000-00-00" class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs focus:border-sky-400 focus:outline-none text-white">
+                    </div>
+                    <button onclick="submitDeal()" class="w-full py-3 rounded-xl bg-sky-400 hover:bg-sky-300 text-zinc-950 font-bold text-xs transition-all flex items-center justify-center gap-2">
+                        <span>Забронировать слот на 30-мин Zoom-разбор</span>
+                        <i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                    <div class="text-[10px] text-zinc-500">
+                        ⚡ 14 дней тест-драйва с возвратом 100% оплаты при несоответствии результатов
+                    </div>
+                </div>
+                <div id="toast-msg" class="hidden text-xs text-emerald-400 font-mono">
+                    ✓ Заявка зафиксирована и расчет скопирован в буфер! Отправьте его мне в Telegram.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-white/5 py-6 text-center text-[11px] font-mono text-zinc-600">
+        FRACTIONAL COO • СИСТЕМНЫЙ ОПЕРАЦИОННЫЙ МЕНЕДЖМЕНТ • БЕЗ БЮРОКРАТИИ И ВОДЫ
+    </footer>
+
+    <script>
+        // 1. ПЕРСОНАЛИЗАЦИЯ ИЗ URL ИЛИ МОДАЛКИ
+        function applyUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const c = params.get('client');
+            const comp = params.get('company');
+            if (c) document.getElementById('out-client').textContent = c;
+            if (comp) document.getElementById('out-company').textContent = comp;
+        }
+
+        function openPersonalize() {
+            const m = document.getElementById('modal-person');
+            m.classList.toggle('hidden');
+            m.classList.toggle('flex');
+            document.getElementById('in-client').value = document.getElementById('out-client').textContent;
+            document.getElementById('in-company').value = document.getElementById('out-company').textContent;
+        }
+
+        function savePersonalize() {
+            const c = document.getElementById('in-client').value.trim();
+            const comp = document.getElementById('in-company').value.trim();
+            if (c) document.getElementById('out-client').textContent = c;
+            if (comp) document.getElementById('out-company').textContent = comp;
+            openPersonalize();
+        }
+
+        // Фокусные сценарии
+        const focusData = {
+            fire: {
+                text: 'Устраняем зависимость бизнеса от основателя: перехватываем операционку, строим регламенты делегирования и освобождаем от 20 часов рутины в неделю.',
+                tag: '⚡ Фокус: Выход CEO из операционки'
+            },
+            fot: {
+                text: 'Проводим аудит штата и процессов: находим дублирование функций, оцифровываем KPI сотрудников и снижаем затраты на неэффективную работу на 15-25%.',
+                tag: '📊 Фокус: Оптимизация ФОТ и маржи'
+            },
+            blind: {
+                text: 'Внедряем прозрачные дашборды (РНП) и контроль SLA: держим качество сервиса на уровне 4.8+ и исключаем потерю заявок или срывы сроков.',
+                tag: '🎯 Фокус: Контроль качества и метрик'
+            }
+        };
+
+        function setFocus(type) {
+            ['fire', 'fot', 'blind'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                if (t === type) {
+                    btn.className = 'p-3 rounded-xl text-left text-xs font-semibold bg-sky-500/15 border border-sky-400/50 text-white transition-all';
+                } else {
+                    btn.className = 'p-3 rounded-xl text-left text-xs font-semibold bg-zinc-900/80 border border-white/5 text-zinc-400 hover:text-white transition-all';
+                }
+            });
+            const d = focusData[type];
+            document.getElementById('focus-panel').innerHTML = `
+                <div>
+                    <span class="font-mono text-sky-400 font-bold block mb-1">${d.tag}</span>
+                    <span>${d.text}</span>
+                </div>
+                <a href="#book" class="px-3 py-1.5 rounded-lg bg-sky-400 text-zinc-950 font-bold text-xs shrink-0 self-start sm:self-center">Решить эту задачу →</a>
+            `;
+        }
+
+        // 3. КАЛЬКУЛЯТОР СТОИМОСТИ ХАОСА, НОВОЙ ПРИБЫЛИ И 3 ТАРИФОВ
+        let currentSelectedTariff = 'Тандем COO + CFO';
+        let currentSelectedPrice = '240 000 ₽/мес';
+
+        function formatRub(num) {
+            return Math.round(num).toLocaleString('ru-RU') + ' ₽';
+        }
+
+        function recalc() {
+            const revMln = parseFloat(document.getElementById('rng-rev').value);
+            const marginPct = parseInt(document.getElementById('rng-margin').value, 10);
+            const staff = parseInt(document.getElementById('rng-staff').value, 10);
+            const hours = parseInt(document.getElementById('rng-hours').value, 10);
+            const cooBase = parseInt(document.getElementById('rng-coo-rate').value, 10);
+
+            document.getElementById('lbl-rev').textContent = revMln.toFixed(1);
+            document.getElementById('lbl-margin').textContent = marginPct;
+            document.getElementById('lbl-staff').textContent = staff;
+            document.getElementById('lbl-hours').textContent = hours;
+            document.getElementById('lbl-coo-rate').textContent = formatRub(cooBase) + '/мес';
+
+            const revenue = revMln * 1000000;
+            const oldProfit = revenue * (marginPct / 100);
+
+            const avgSalary = 110000;
+            const ceoHourRate = 4000;
+
+            const cooSaved = (staff * avgSalary * 0.14) + (hours * 4.3 * ceoHourRate);
+            const cfoSaved = revenue * 0.035;
+            const totalReserve = cooSaved + cfoSaved;
+            const newProfit = oldProfit + totalReserve;
+            const profitGrowthPct = oldProfit > 0 ? Math.round((totalReserve / oldProfit) * 100) : 100;
+
+            document.getElementById('out-old-profit').textContent = formatRub(oldProfit);
+            document.getElementById('out-new-profit').textContent = formatRub(newProfit);
+            document.getElementById('out-profit-growth').textContent = `+${profitGrowthPct}% к прибыли`;
+            document.getElementById('out-loss').textContent = '+' + formatRub(totalReserve) + '/мес';
+
+            const cfoAddon = 90000;
+            const scaleAddon = 80000;
+
+            // Тариф 1
+            const t1Cost = cooBase;
+            const t1Gain = cooSaved;
+            const t1Net = t1Gain - t1Cost;
+            const t1Roi = (t1Gain / t1Cost).toFixed(1);
+            const t1Days = Math.max(2, Math.round((t1Cost / t1Gain) * 30));
+
+            // Тариф 2
+            const t2Cost = cooBase + cfoAddon;
+            const t2Gain = totalReserve;
+            const t2Net = t2Gain - t2Cost;
+            const t2Roi = (t2Gain / t2Cost).toFixed(1);
+            const t2Days = Math.max(2, Math.round((t2Cost / t2Gain) * 30));
+
+            // Тариф 3
+            const t3Cost = cooBase + cfoAddon + scaleAddon;
+            const t3Gain = totalReserve * 1.28;
+            const t3Net = t3Gain - t3Cost;
+            const t3Roi = (t3Gain / t3Cost).toFixed(1);
+            const t3Days = Math.max(2, Math.round((t3Cost / t3Gain) * 30));
+
+            document.getElementById('t1-price').innerHTML = `${formatRub(t1Cost)}<span class="text-xs font-normal text-zinc-500">/мес</span>`;
+            document.getElementById('t1-roi').textContent = `ROI ${t1Roi}x`;
+            document.getElementById('t1-net').textContent = (t1Net >= 0 ? '+' : '') + formatRub(t1Net);
+            document.getElementById('t1-payback').textContent = `~${t1Days} дн.`;
+
+            document.getElementById('t2-price').innerHTML = `${formatRub(t2Cost)}<span class="text-xs font-normal text-zinc-400">/мес</span>`;
+            document.getElementById('t2-roi').textContent = `ROI ${t2Roi}x`;
+            document.getElementById('t2-net').textContent = (t2Net >= 0 ? '+' : '') + formatRub(t2Net);
+            document.getElementById('t2-payback').textContent = `~${t2Days} дн.`;
+
+            document.getElementById('t3-price').innerHTML = `${formatRub(t3Cost)}<span class="text-xs font-normal text-zinc-500">/мес</span>`;
+            document.getElementById('t3-roi').textContent = `ROI ${t3Roi}x`;
+            document.getElementById('t3-net').textContent = (t3Net >= 0 ? '+' : '') + formatRub(t3Net);
+            document.getElementById('t3-payback').textContent = `~${t3Days} дн.`;
+
+            // Обновляем текущий выбранный тариф для формы
+            if (activeTariffNum === 1) {
+                currentSelectedPrice = formatRub(t1Cost) + '/мес';
+            } else if (activeTariffNum === 2) {
+                currentSelectedPrice = formatRub(t2Cost) + '/мес';
+            } else {
+                currentSelectedPrice = formatRub(t3Cost) + '/мес';
+            }
+            document.getElementById('selected-tariff-price').textContent = currentSelectedPrice;
+        }
+
+        let activeTariffNum = 2;
+
+        function selectTariff(num) {
+            activeTariffNum = num;
+            [1, 2, 3].forEach(n => {
+                const card = document.getElementById('tariff-card-' + n);
+                if (n === num) {
+                    card.className = 'cursor-pointer p-5 rounded-2xl bg-sky-500/10 border-2 border-sky-400 transition-all flex flex-col justify-between space-y-5 relative';
+                } else {
+                    card.className = 'cursor-pointer p-5 rounded-2xl bg-zinc-950/90 border border-white/10 hover:border-sky-400/50 transition-all flex flex-col justify-between space-y-5';
+                }
+            });
+
+            const names = {
+                1: 'Операционный контроль',
+                2: 'Тандем COO + CFO',
+                3: 'Масштаб под ключ'
+            };
+            currentSelectedTariff = names[num];
+            document.getElementById('selected-tariff-name').textContent = currentSelectedTariff;
+            recalc();
+        }
+
+        // 4. ДОРОЖНАЯ КАРТА 90 ДНЕЙ
+        const sprints = {
+            1: {
+                title: 'Месяц 1: Аудит, тушение пожаров и оцифровка',
+                desc: 'Останавливаем утечки денег и хаос в задачах. Вы получаете прозрачную картину по людям и срокам.',
+                items: [
+                    'Оцифровка воронки исполнения и узких мест в отделах',
+                    'Единый дашборд РНП (Рука на пульсе) с ключевыми метриками дня',
+                    'Перехват операционных планерок и эскалаций на COO',
+                    'Закрытие главных дыр в клиентском сервисе и SLA'
+                ]
+            },
+            2: {
+                title: 'Месяц 2: Сборка KPI, регламентов и мотивации',
+                desc: 'Переводим команду с ручного управления на систему твердых показателей и прозрачной мотивации.',
+                items: [
+                    'Пересборка системы мотивации: привязка бонусов к марже и SLA',
+                    'Регламентация передачи клиентов между продажами и производством',
+                    'Оптимизация раздутых графиков и неэффективного ФОТ',
+                    'Внедрение регулярного менеджмента для руководителей групп'
+                ]
+            },
+            3: {
+                title: 'Месяц 3: Автономность и выход основателя',
+                desc: 'Вы выходите из операционной рутины в роль стратега и контролируете бизнес по 1 сводному дашборду.',
+                items: [
+                    'Передача регулярного управления выращенным тимлидам',
+                    'Операционная модель масштабирования штата на 12 месяцев',
+                    'Автоматизация управленческих отчетов без ручного сбора таблиц',
+                    'Режим участия собственника: 1 стратегический совет в неделю (2 часа)'
+                ]
+            }
+        };
+
+        function setSprint(num) {
+            [1, 2, 3].forEach(n => {
+                const btn = document.getElementById('sp-' + n);
+                if (n === num) {
+                    btn.className = 'px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-sky-400 text-zinc-950 transition-all';
+                } else {
+                    btn.className = 'px-2.5 py-1 rounded text-[11px] font-mono font-bold text-zinc-400 hover:text-white transition-all';
+                }
+            });
+
+            const s = sprints[num];
+            document.getElementById('sprint-content').innerHTML = `
+                <div>
+                    <h3 class="font-bold text-sm sm:text-base text-white">${s.title}</h3>
+                    <p class="text-xs text-zinc-400 mt-1">${s.desc}</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    ${s.items.map(item => `
+                        <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/5 flex items-start gap-2.5 text-xs text-zinc-200">
+                            <i class="ph-bold ph-check-circle text-emerald-400 text-sm shrink-0 mt-0.5"></i>
+                            <span>${item}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // БРОНИРОВАНИЕ И КОПИРОВАНИЕ СВОДКИ
+        function submitDeal() {
+            const contact = document.getElementById('lead-contact').value.trim() || 'не указан';
+            const client = document.getElementById('out-client').textContent;
+            const company = document.getElementById('out-company').textContent;
+
+            const summary = `Заявка на Fractional COO\nКлиент: ${client} (${company})\nВыбранный тариф: ${currentSelectedTariff} (${currentSelectedPrice})\nКонтакт: ${contact}`;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = summary;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Copy fallback failed', err);
+            }
+            document.body.removeChild(tempInput);
+
+            const toast = document.getElementById('toast-msg');
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 5000);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyUrlParams();
+            setFocus('fire');
+            recalc();
+            setSprint(1);
+        });
+    </script>
+</body>
+</html>
